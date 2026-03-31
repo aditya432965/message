@@ -3,191 +3,177 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CORE | Unified Messaging</title>
+    <title>Streamline | Pro Messaging</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-storage-compat.js"></script>
 
     <style>
-        :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --border: #262626;
-            --accent: #ffffff;
-            --text-main: #e5e5e5;
-            --text-dim: #737373;
-        }
+        :root { --p: #2563eb; --bg: #f8fafc; --dark: #0f172a; --glass: rgba(255,255,255,0.9); }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--dark); height: 100vh; display: flex; flex-direction: column; }
 
-        * { box-sizing: border-box; }
-        body { 
-            margin: 0; background: var(--bg); color: var(--text-main); 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            height: 100vh; display: flex; 
-        }
+        /* Login */
+        #login-overlay { position: fixed; inset: 0; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card { width: 320px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-radius: 20px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; }
+        .btn { width: 100%; padding: 12px; background: var(--p); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
 
-        /* Access Overlay */
-        #gate {
-            position: fixed; inset: 0; background: var(--bg); z-index: 1000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .gate-card { width: 320px; text-align: center; }
-        .input-alt {
-            width: 100%; background: transparent; border: 1px solid var(--border);
-            padding: 15px; color: white; margin-bottom: 10px; font-size: 1rem;
-        }
-        .btn-alt {
-            width: 100%; padding: 15px; background: var(--accent); color: black;
-            border: none; font-weight: 800; cursor: pointer; text-transform: uppercase;
-        }
+        /* App Interface */
+        header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+        .status-dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; display: inline-block; }
 
-        /* Main Layout */
-        .workspace {
-            display: none; width: 100%; height: 100vh;
-            grid-template-columns: 280px 1fr;
-        }
-
-        /* Sidebar */
-        aside {
-            background: var(--surface); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-        }
-        .brand { padding: 30px; font-weight: 900; letter-spacing: 2px; border-bottom: 1px solid var(--border); }
-        .user-card { padding: 20px; margin-top: auto; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
-        .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
-
-        /* Chat Engine */
-        main { display: flex; flex-direction: column; background: var(--bg); }
-        .chat-header { padding: 20px 30px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        #chat-scroller { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         
-        #stream {
-            flex: 1; overflow-y: auto; padding: 30px;
-            display: flex; flex-direction: column; gap: 24px;
-        }
+        .msg { max-width: 80%; padding: 12px; border-radius: 15px; position: relative; font-size: 0.95rem; }
+        .msg.me { align-self: flex-end; background: var(--p); color: white; border-bottom-right-radius: 2px; }
+        .msg.them { align-self: flex-start; background: white; color: var(--dark); border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .meta { font-size: 0.7rem; opacity: 0.7; margin-bottom: 4px; display: block; font-weight: bold; }
+        
+        /* Media Styling */
+        .media-content { width: 100%; border-radius: 8px; margin-top: 5px; cursor: pointer; }
 
-        .row { display: flex; flex-direction: column; gap: 4px; max-width: 80%; }
-        .row.mine { align-self: flex-end; align-items: flex-end; }
-        .row.others { align-self: flex-start; }
-
-        .u-name { font-size: 0.7rem; font-weight: bold; color: var(--text-dim); text-transform: uppercase; }
-        .bubble {
-            padding: 14px 18px; font-size: 0.95rem; line-height: 1.6;
-            border: 1px solid var(--border); border-radius: 4px;
-        }
-        .mine .bubble { background: var(--accent); color: black; border: none; }
-        .time-label { font-size: 0.6rem; color: var(--text-dim); }
-
-        /* Input Bar */
-        .input-dock { padding: 30px; border-top: 1px solid var(--border); display: flex; gap: 15px; }
-        #msg-in {
-            flex: 1; background: var(--surface); border: 1px solid var(--border);
-            padding: 15px; color: white; outline: none;
-        }
+        /* Footer & Actions */
+        footer { background: white; padding: 15px; border-top: 1px solid #e2e8f0; }
+        .input-box { display: flex; gap: 10px; align-items: center; max-width: 900px; margin: 0 auto; }
+        .icon-btn { background: #f1f5f9; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+        
+        /* Sound Toggle */
+        .sound-opt { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="gate">
-        <div class="gate-card">
-            <h1 style="font-size: 3rem; margin-bottom: 10px;">CORE</h1>
-            <p style="color: var(--text-dim); margin-bottom: 40px;">v1.0.4 Global Messaging</p>
-            <input type="text" id="user-id" class="input-alt" placeholder="IDENTIFICATION NAME">
-            <button class="btn-alt" onclick="access()">Authenticate</button>
+    <div id="login-overlay">
+        <div class="card">
+            <h2 style="margin-top:0">Sign In</h2>
+            <input type="text" id="username" placeholder="Choose a Nickname">
+            <button class="btn" onclick="login()">Enter Chat</button>
         </div>
     </div>
 
-    <div class="workspace" id="app">
-        <aside>
-            <div class="brand">SYSTEM_CORE</div>
-            <div style="padding: 30px; color: var(--text-dim); font-size: 0.8rem;">
-                <p># GLOBAL_CHANNEL</p>
-                <p># LOGS</p>
-            </div>
-            <div class="user-card">
-                <div class="dot"></div>
-                <span id="active-user" style="font-weight: bold;"></span>
-            </div>
-        </aside>
+    <header>
+        <div>
+            <b id="header-user">Global Room</b><br>
+            <span style="font-size: 0.7rem;"><span class="status-dot"></span> Active Feed</span>
+        </div>
+        <div class="sound-opt" onclick="toggleSound()">
+            <span id="sound-icon">🔔</span> <span id="sound-text">Alert: On</span>
+        </div>
+    </header>
 
-        <main>
-            <header class="chat-header">
-                <div style="font-weight: bold;">GLOBAL_STREAM</div>
-                <div id="status-tag" style="font-size: 0.7rem; color: var(--text-dim);">FIRESTORE_SECURED</div>
-            </header>
+    <div id="chat-scroller"></div>
 
-            <div id="stream"></div>
+    <footer>
+        <div class="input-box">
+            <label class="icon-btn">
+                📎<input type="file" id="media-file" hidden accept="image/*,video/*" onchange="uploadMedia()">
+            </label>
+            <input type="text" id="msg-input" placeholder="Type a message...">
+            <button class="icon-btn" style="background: var(--p); color: white;" onclick="sendText()">➤</button>
+        </div>
+    </footer>
 
-            <div class="input-dock">
-                <input type="text" id="msg-in" placeholder="Write message..." autocomplete="off">
-                <button class="btn-alt" style="width: auto; padding: 0 30px;" onclick="push()">Transmit</button>
-            </div>
-        </main>
-    </div>
+    <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
 
 <script>
-    // --- 1. CONFIGURATION ---
+    // 1. ADD YOUR FIREBASE CONFIG
     const firebaseConfig = {
   apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
   authDomain: "message-a82b4.firebaseapp.com",
   projectId: "message-a82b4",
   storageBucket: "message-a82b4.firebasestorage.app",
   messagingSenderId: "571635548948",
-  appId: "1:571635548948:web:5ef619ee57a8b298327801"
+  appId: "1:571635548948:web:5ef619ee57a8b298327801"P_ID"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    let authName = "";
+    const storage = firebase.storage();
+    
+    let me = "";
+    let soundEnabled = true;
 
-    // --- 2. LOGIC ---
-    function access() {
-        const name = document.getElementById('user-id').value.trim();
-        if(!name) return;
-        authName = name;
-        document.getElementById('active-user').innerText = authName;
-        document.getElementById('gate').style.display = 'none';
-        document.getElementById('app').style.display = 'grid';
+    function login() {
+        const val = document.getElementById('username').value.trim();
+        if(!val) return;
+        me = val;
+        document.getElementById('login-overlay').style.display = 'none';
         sync();
     }
 
-    async function push() {
-        const el = document.getElementById('msg-in');
-        if(!el.value.trim()) return;
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-text').innerText = `Alert: ${soundEnabled ? 'On' : 'Off'}`;
+        document.getElementById('sound-icon').innerText = soundEnabled ? '🔔' : '🔕';
+    }
 
-        await db.collection("core_stream").add({
-            sender: authName,
-            content: el.value,
-            sentAt: firebase.firestore.FieldValue.serverTimestamp()
+    async function sendText() {
+        const input = document.getElementById('msg-input');
+        if(!input.value.trim()) return;
+        saveMsg({ user: me, text: input.value, type: 'text' });
+        input.value = "";
+    }
+
+    async function uploadMedia() {
+        const file = document.getElementById('media-file').files[0];
+        if(!file) return;
+
+        const path = `chat/${Date.now()}_${file.name}`;
+        const ref = storage.ref().child(path);
+        
+        alert("Uploading media... please wait.");
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        
+        saveMsg({ 
+            user: me, 
+            url: url, 
+            type: file.type.startsWith('image') ? 'image' : 'video' 
         });
-        el.value = "";
+    }
+
+    function saveMsg(data) {
+        db.collection("global_chat").add({
+            ...data,
+            time: firebase.firestore.FieldValue.serverTimestamp()
+        });
     }
 
     function sync() {
-        db.collection("core_stream").orderBy("sentAt", "asc")
+        let isFirstLoad = true;
+        db.collection("global_chat").orderBy("time", "asc")
           .onSnapshot((snap) => {
-            const stream = document.getElementById('stream');
-            stream.innerHTML = "";
+            const scroller = document.getElementById('chat-scroller');
+            scroller.innerHTML = "";
             
             snap.forEach((doc) => {
-                const data = doc.data();
-                const isMine = data.sender === authName;
-                const time = data.sentAt ? new Date(data.sentAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "..";
+                const m = doc.data();
+                const isMe = m.user === me;
+                const div = document.createElement('div');
+                div.className = `msg ${isMe ? 'me' : 'them'}`;
+                
+                let content = m.text ? `<div>${m.text}</div>` : '';
+                if(m.type === 'image') content = `<img src="${m.url}" class="media-content">`;
+                if(m.type === 'video') content = `<video src="${m.url}" controls class="media-content"></video>`;
 
-                const node = document.createElement('div');
-                node.className = `row ${isMine ? 'mine' : 'others'}`;
-                node.innerHTML = `
-                    <span class="u-name">${data.sender}</span>
-                    <div class="bubble">${data.content}</div>
-                    <span class="time-label">${time}</span>
-                `;
-                stream.appendChild(node);
+                div.innerHTML = `<span class="meta">${m.user}</span>${content}`;
+                scroller.appendChild(div);
             });
-            stream.scrollTop = stream.scrollHeight;
+
+            scroller.scrollTop = scroller.scrollHeight;
+
+            // Trigger Ringtone for 5 seconds on NEW messages only
+            if(!isFirstLoad && soundEnabled) {
+                const audio = document.getElementById('alert-sound');
+                audio.play();
+                setTimeout(() => { audio.pause(); audio.currentTime = 0; }, 5000);
+            }
+            isFirstLoad = false;
         });
     }
 
-    // Keyboard trigger
-    document.getElementById('msg-in').addEventListener('keypress', (e) => { if(e.key === 'Enter') push(); });
+    document.getElementById('msg-input').onkeypress = (e) => { if(e.key === 'Enter') sendText(); };
 </script>
-
 </body>
 </html>
