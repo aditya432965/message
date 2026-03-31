@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickChat | Messaging App</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #f3f4f6;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            height: 600px;
+            background: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Header & Profile Section */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+            background: #ddd;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Chat Window */
+        #chat-window {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #fafafa;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: #e5e7eb;
+            color: var(--text);
+            border-bottom-left-radius: 2px;
+        }
+
+        .nickname-label {
+            font-size: 0.7rem;
+            display: block;
+            margin-bottom: 2px;
+            opacity: 0.8;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        /* Settings Modal */
+        #settings-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <div class="profile-info">
+            <div class="avatar" id="user-avatar">?</div>
+            <div>
+                <strong id="display-nickname">User</strong>
+                <div style="font-size: 0.7rem; opacity: 0.9;">Online</div>
+            </div>
+        </div>
+        <button onclick="toggleSettings()" style="background: rgba(255,255,255,0.2);">⚙️</button>
+    </header>
+
+    <div id="chat-window">
+        </div>
+
+    <div class="input-area">
+        <input type="text" id="msg-input" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<div id="settings-modal">
+    <div class="modal-content">
+        <h3>Profile Settings</h3>
+        <label>Set Nickname:</label>
+        <input type="text" id="nickname-input" style="width: 100%; margin: 10px 0; padding: 5px;">
+        <button onclick="saveProfile()" style="width: 100%;">Save & Close</button>
+    </div>
+</div>
+
+<script>
+    let currentUser = localStorage.getItem('nickname') || 'Guest';
+
+    // Initialize UI
+    document.getElementById('display-nickname').innerText = currentUser;
+    document.getElementById('user-avatar').innerText = currentUser.charAt(0).toUpperCase();
+
+    // Load existing messages
+    function loadMessages() {
+        const chatWindow = document.getElementById('chat-window');
+        const messages = JSON.parse(localStorage.getItem('chat_messages')) || [];
+        chatWindow.innerHTML = '';
+        
+        messages.forEach(msg => {
+            const div = document.createElement('div');
+            const isMe = msg.user === currentUser;
+            div.className = `message ${isMe ? 'sent' : 'received'}`;
+            div.innerHTML = `
+                <span class="nickname-label">${msg.user}</span>
+                ${msg.text}
+            `;
+            chatWindow.appendChild(div);
+        });
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('msg-input');
+        if (!input.value.trim()) return;
+
+        const messages = JSON.parse(localStorage.getItem('chat_messages')) || [];
+        messages.push({
+            user: currentUser,
+            text: input.value
+        });
+
+        localStorage.setItem('chat_messages', JSON.stringify(messages));
+        input.value = '';
+        loadMessages();
+    }
+
+    function saveProfile() {
+        const newName = document.getElementById('nickname-input').value;
+        if (newName) {
+            localStorage.setItem('nickname', newName);
+            currentUser = newName;
+            document.getElementById('display-nickname').innerText = newName;
+            document.getElementById('user-avatar').innerText = newName.charAt(0).toUpperCase();
+            toggleSettings();
+            loadMessages();
+        }
+    }
+
+    function toggleSettings() {
+        const modal = document.getElementById('settings-modal');
+        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    // Listen for storage changes (updates chat if you have two tabs open)
+    window.addEventListener('storage', loadMessages);
+
+    // Initial load
+    loadMessages();
+</script>
+
+</body>
+</html>
