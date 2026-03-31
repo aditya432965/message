@@ -3,243 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickChat | Messaging App</title>
+    <title>NEON CLOUD | Real-time Messaging</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
         :root {
-            --primary: #6366f1;
-            --bg: #f3f4f6;
-            --text: #1f2937;
+            --neon-blue: #00d2ff;
+            --neon-pink: #ff007f;
+            --glass: rgba(255, 255, 255, 0.08);
+            --bg-dark: #020617;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
             margin: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b, #020617);
+            color: white;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 400px;
-            height: 600px;
-            background: white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            border-radius: 12px;
             overflow: hidden;
         }
 
-        /* Header & Profile Section */
+        .app-container {
+            width: 90vw;
+            max-width: 500px;
+            height: 80vh;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+
         header {
-            background: var(--primary);
-            color: white;
-            padding: 15px;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .profile-info {
+        .profile-chip {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            background: rgba(255,255,255,0.05);
+            padding: 5px 15px 5px 5px;
+            border-radius: 50px;
         }
 
         .avatar {
-            width: 35px;
-            height: 35px;
-            background: #ddd;
+            width: 40px; height: 40px;
             border-radius: 50%;
+            background: var(--neon-blue);
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             font-weight: bold;
-            color: var(--primary);
+            box-shadow: 0 0 10px var(--neon-blue);
         }
 
-        /* Chat Window */
-        #chat-window {
+        #chat-box {
             flex: 1;
-            padding: 15px;
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            background: #fafafa;
+            gap: 15px;
         }
 
-        .message {
-            max-width: 80%;
-            padding: 8px 12px;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            position: relative;
+        .msg-wrap {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%;
         }
 
-        .message.sent {
-            align-self: flex-end;
-            background: var(--primary);
-            color: white;
-            border-bottom-right-radius: 2px;
-        }
+        .msg-wrap.me { align-self: flex-end; }
+        .msg-wrap.them { align-self: flex-start; }
 
-        .message.received {
-            align-self: flex-start;
-            background: #e5e7eb;
-            color: var(--text);
-            border-bottom-left-radius: 2px;
-        }
-
-        .nickname-label {
+        .sender-name {
             font-size: 0.7rem;
-            display: block;
-            margin-bottom: 2px;
-            opacity: 0.8;
+            margin-bottom: 4px;
+            color: var(--neon-blue);
+            font-weight: bold;
         }
 
-        /* Input Area */
-        .input-area {
-            padding: 15px;
-            border-top: 1px solid #eee;
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .me .bubble {
+            background: linear-gradient(135deg, var(--neon-blue), #3b82f6);
+            border-bottom-right-radius: 4px;
+        }
+
+        .them .bubble {
+            background: rgba(255,255,255,0.1);
+            border-bottom-left-radius: 4px;
+        }
+
+        .input-wrap {
+            padding: 20px;
             display: flex;
             gap: 10px;
         }
 
-        input[type="text"] {
+        input {
             flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 20px;
+            border-radius: 15px;
+            color: white;
             outline: none;
         }
 
         button {
-            background: var(--primary);
-            color: white;
+            background: var(--neon-pink);
             border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
+            padding: 0 20px;
+            border-radius: 15px;
+            color: white;
+            font-weight: bold;
             cursor: pointer;
         }
 
-        /* Settings Modal */
-        #settings-modal {
+        /* Overlay for Nickname */
+        #login-overlay {
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
+            inset: 0;
+            background: #020617;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            width: 80%;
-            max-width: 300px;
+            gap: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <div class="profile-info">
-            <div class="avatar" id="user-avatar">?</div>
-            <div>
-                <strong id="display-nickname">User</strong>
-                <div style="font-size: 0.7rem; opacity: 0.9;">Online</div>
-            </div>
-        </div>
-        <button onclick="toggleSettings()" style="background: rgba(255,255,255,0.2);">⚙️</button>
-    </header>
-
-    <div id="chat-window">
-        </div>
-
-    <div class="input-area">
-        <input type="text" id="msg-input" placeholder="Type a message...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+<div id="login-overlay">
+    <h1>Enter the Nexus</h1>
+    <input type="text" id="nick-input" placeholder="Your Nickname..." style="width: 250px;">
+    <button onclick="startApp()" style="height: 45px; width: 250px;">INITIALIZE</button>
 </div>
 
-<div id="settings-modal">
-    <div class="modal-content">
-        <h3>Profile Settings</h3>
-        <label>Set Nickname:</label>
-        <input type="text" id="nickname-input" style="width: 100%; margin: 10px 0; padding: 5px;">
-        <button onclick="saveProfile()" style="width: 100%;">Save & Close</button>
+<div class="app-container">
+    <header>
+        <div class="profile-chip">
+            <div class="avatar" id="my-avatar">?</div>
+            <span id="my-name">Guest</span>
+        </div>
+        <div style="color: var(--neon-blue); font-weight: 900;">LIVE_FEED</div>
+    </header>
+
+    <div id="chat-box"></div>
+
+    <div class="input-wrap">
+        <input type="text" id="message-input" placeholder="Transmit message..." onkeypress="checkEnter(event)">
+        <button onclick="sendToCloud()">SEND</button>
     </div>
 </div>
 
 <script>
-    let currentUser = localStorage.getItem('nickname') || 'Guest';
+    // --- FIREBASE CONFIGURATION ---
+    // PASTE YOUR FIREBASE CONFIG OBJECT HERE
+    const firebaseConfig = {
+         apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
+  authDomain: "message-a82b4.firebaseapp.com",
+  projectId: "message-a82b4",
+  storageBucket: "message-a82b4.firebasestorage.app",
+  messagingSenderId: "571635548948",
+  appId: "1:571635548948:web:5ef619ee57a8b298327801"
+    };
 
-    // Initialize UI
-    document.getElementById('display-nickname').innerText = currentUser;
-    document.getElementById('user-avatar').innerText = currentUser.charAt(0).toUpperCase();
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const chatRef = database.ref('messages');
 
-    // Load existing messages
-    function loadMessages() {
-        const chatWindow = document.getElementById('chat-window');
-        const messages = JSON.parse(localStorage.getItem('chat_messages')) || [];
-        chatWindow.innerHTML = '';
-        
-        messages.forEach(msg => {
-            const div = document.createElement('div');
-            const isMe = msg.user === currentUser;
-            div.className = `message ${isMe ? 'sent' : 'received'}`;
-            div.innerHTML = `
-                <span class="nickname-label">${msg.user}</span>
-                ${msg.text}
-            `;
-            chatWindow.appendChild(div);
-        });
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+    let username = "";
+
+    function startApp() {
+        const input = document.getElementById('nick-input');
+        if(!input.value.trim()) return;
+        username = input.value;
+        document.getElementById('my-name').innerText = username;
+        document.getElementById('my-avatar').innerText = username.charAt(0).toUpperCase();
+        document.getElementById('login-overlay').style.display = 'none';
+        listenForMessages();
     }
 
-    function sendMessage() {
-        const input = document.getElementById('msg-input');
-        if (!input.value.trim()) return;
+    function sendToCloud() {
+        const input = document.getElementById('message-input');
+        if(!input.value.trim()) return;
 
-        const messages = JSON.parse(localStorage.getItem('chat_messages')) || [];
-        messages.push({
-            user: currentUser,
-            text: input.value
+        chatRef.push({
+            user: username,
+            text: input.value,
+            timestamp: Date.now()
         });
 
-        localStorage.setItem('chat_messages', JSON.stringify(messages));
         input.value = '';
-        loadMessages();
     }
 
-    function saveProfile() {
-        const newName = document.getElementById('nickname-input').value;
-        if (newName) {
-            localStorage.setItem('nickname', newName);
-            currentUser = newName;
-            document.getElementById('display-nickname').innerText = newName;
-            document.getElementById('user-avatar').innerText = newName.charAt(0).toUpperCase();
-            toggleSettings();
-            loadMessages();
-        }
+    function listenForMessages() {
+        chatRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+
+            for(let id in data) {
+                const msg = data[id];
+                const isMe = msg.user === username;
+                
+                const div = document.createElement('div');
+                div.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
+                div.innerHTML = `
+                    <span class="sender-name">${msg.user}</span>
+                    <div class="bubble">${msg.text}</div>
+                `;
+                chatBox.appendChild(div);
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
     }
 
-    function toggleSettings() {
-        const modal = document.getElementById('settings-modal');
-        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-    }
-
-    // Listen for storage changes (updates chat if you have two tabs open)
-    window.addEventListener('storage', loadMessages);
-
-    // Initial load
-    loadMessages();
+    function checkEnter(e) { if(e.key === 'Enter') sendToCloud(); }
 </script>
 
 </body>
