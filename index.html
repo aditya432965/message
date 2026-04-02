@@ -56,7 +56,7 @@
         <header>
             <div>
                 <b style="font-size: 1.1rem;">Cloud Feed</b><br>
-                <span class="sound-toggle" id="mute-btn" onclick="toggleMute()">🔔 ALERTS: ON</span>
+                <span class="sound-toggle" id="mute-btn" onclick="toggleMute()">🔔 VOICE: ON</span>
             </div>
             <div style="font-size: 0.7rem; color: #888;">FIRESTORE_SYNC</div>
         </header>
@@ -70,17 +70,15 @@
         </footer>
     </div>
 
-    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
-
 <script>
     // --- FIREBASE CONFIGURATION ---
     const firebaseConfig = {
-apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
-  authDomain: "message-a82b4.firebaseapp.com",
-  projectId: "message-a82b4",
-  storageBucket: "message-a82b4.firebasestorage.app",
-  messagingSenderId: "571635548948",
-  appId: "1:571635548948:web:5ef619ee57a8b298327801"
+        apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
+        authDomain: "message-a82b4.firebaseapp.com",
+        projectId: "message-a82b4",
+        storageBucket: "message-a82b4.firebasestorage.app",
+        messagingSenderId: "571635548948",
+        appId: "1:571635548948:web:5ef619ee57a8b298327801"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -101,17 +99,14 @@ apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
 
     function toggleMute() {
         muted = !muted;
-        document.getElementById('mute-btn').innerText = muted ? "🔕 ALERTS: OFF" : "🔔 ALERTS: ON";
+        document.getElementById('mute-btn').innerText = muted ? "🔕 VOICE: OFF" : "🔔 VOICE: ON";
     }
 
-    // Media via URL (Since Storage is cancelled)
     function promptMedia() {
         const url = prompt("Paste Image or Video URL:");
         if(!url) return;
-        
         let type = 'image';
         if(url.includes('.mp4') || url.includes('youtube') || url.includes('video')) type = 'video';
-        
         pushToFirebase({ user: myName, type: type, content: url });
     }
 
@@ -129,14 +124,32 @@ apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
         });
     }
 
+    // Voice Announcement Logic
+    function speakAnnouncement(senderName) {
+        if (muted) return;
+        
+        const announcement = `${senderName} sent a message.`;
+        const utterance = new SpeechSynthesisUtterance(announcement);
+        utterance.rate = 1; // Speed
+        
+        // Loop 3 times
+        for (let i = 0; i < 3; i++) {
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
     function startSync() {
         db.collection("chat_v3").orderBy("timestamp", "asc")
         .onSnapshot((snapshot) => {
             const scroller = document.getElementById('chat-scroller');
-            scroller.innerHTML = "";
             
+            // Check for new messages only
+            let lastMessage = null;
+            
+            scroller.innerHTML = "";
             snapshot.forEach((doc) => {
                 const m = doc.data();
+                lastMessage = m; // Track the most recent message
                 const isMe = m.user === myName;
                 const div = document.createElement('div');
                 div.className = `msg ${isMe ? 'sent' : 'received'}`;
@@ -152,15 +165,11 @@ apiKey: "AIzaSyBWtfnkI4DjCRrCMAhOXgF6xORY-D9A9mw",
 
             scroller.scrollTop = scroller.scrollHeight;
 
-            // 5-Second Ringtone Logic
-            if (!firstLoad && !muted) {
-                const audio = document.getElementById('notif-sound');
-                audio.play().catch(e => console.log("Audio requires user interaction first"));
-                setTimeout(() => { 
-                    audio.pause(); 
-                    audio.currentTime = 0; 
-                }, 5000);
+            // VOICE LOGIC: Trigger if it's not the initial load and someone else sent the message
+            if (!firstLoad && lastMessage && lastMessage.user !== myName) {
+                speakAnnouncement(lastMessage.user);
             }
+            
             firstLoad = false;
         });
     }
